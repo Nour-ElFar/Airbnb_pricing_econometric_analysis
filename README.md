@@ -63,4 +63,4 @@ This repository contains an econometric analysis of Airbnb pricing dynamics acro
 - F-tests for interaction significance
 - Non-nested F-test (discrimination approach)
 
-## 📁 Repository Structure
+
