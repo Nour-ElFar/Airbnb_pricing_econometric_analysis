@@ -9,7 +9,7 @@ Econometric analysis of Airbnb pricing across European cities using R
 This repository contains an econometric analysis of Airbnb pricing dynamics across European cities. The study investigates what factors influence Airbnb prices, with a particular focus on:
 
 - **Question 1**: What variables influence Airbnb prices?
-- **Question 2**: Does log(price) differ significantly by city and room type, and does their interaction matter?
+- **Question 2**: Does price differ significantly by city and room type, and does their interaction matter?
 - **Question 3**: Does weekend pricing differ between Amsterdam and Lisbon?
 
 **Data**: 200 Airbnb listings from Amsterdam and Lisbon with 11 variables including:
