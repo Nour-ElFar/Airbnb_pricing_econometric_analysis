@@ -1,0 +1,297 @@
+Question 2
+
+# =============================================================================
+#  TWO-WAY ANOVA VIA LM
+#  Price ~ City + room_type + City:room_type
+#  Full assumption checking suite
+# =============================================================================
+#Does log(Price) differ significantly by City and room type, and does their interaction matter?
+
+# ---- 0. PACKAGES ------------------------------------------------------------
+packages <- c("readxl", "ggplot2", "car", "emmeans", "ggpubr",
+              "nortest", "lmtest", "moments", "dplyr", "tidyr")
+
+installed <- packages %in% rownames(installed.packages())
+if (any(!installed)) install.packages(packages[!installed],
+                                      repos = "https://cran.r-project.org")
+
+library(readxl)
+library(ggplot2)
+library(car)
+library(emmeans)
+library(ggpubr)
+library(nortest)
+library(lmtest)
+library(moments)
+library(tidyr)
+library(dplyr)   # last — prevents select() masking
+
+
+# =============================================================================
+# SECTION 1 — LOAD & PREPARE DATA
+# =============================================================================
+
+df <- read_excel("C:/Users/noura/Downloads/airbnb_with_guest_satisfaction.xlsx")
+
+# Factor coercion
+df$city      <- factor(df$city,      levels = c("Amsterdam", "Lisbon"))
+df$room_type <- factor(df$room_type, levels = c("Entire home/apt", "Private room"))
+# Numeric coercion
+df$price     <- as.numeric(df$price)
+df$log_price <- as.numeric(df$log_price)
+
+
+# =============================================================================
+# SECTION 2 — FIT THE LM MODEL
+# =============================================================================
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+#first model price without any tranformation
+model_without_log <- lm(price ~ city * room_type, data = df)
+print(summary(model_without_log))
+
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model_without_log$fitted.values, model_without_log$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model_without_log$residuals)
+qqline(model_without_log$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model_without_log))
+#Anderson Darling
+library(nortest)
+ad.test(model_without_log$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model_without_log)
+
+# 4. Multicollinearity
+library(car)
+vif(model_without_log)
+
+# 5. Independence of errors
+durbinWatsonTest(model_without_log)
+
+###Checking Specification
+reset_result <- resettest(model_without_log, power = 2:3, type = "fitted")
+print(reset_result)
+
+
+#Fiting Model with log for price
+model <- lm(log_price ~ city * room_type, data = df)
+print(summary(model))
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model$fitted.values, model$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model$residuals)
+qqline(model$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model))
+#Anderson Darling
+library(nortest)
+ad.test(model$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model)
+lt <- leveneTest(log_price ~ city * room_type, data = df, center = mean)
+print(lt)
+# 4. Multicollinearity
+library(car)
+vif(model)
+
+# 5. Independence of errors
+durbinWatsonTest(model)
+
+###Checking Specification
+reset_result <- resettest(model, power = 2:3, type = "fitted")
+print(reset_result)
+
+
+#Fitting Model with SQRT fo price
+model_sqrt <- lm(sqrt(price) ~ city * room_type, data = df)
+print(summary(model_sqrt))
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model_sqrt$fitted.values, model_sqrt$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model_sqrt$residuals)
+qqline(model_sqrt$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model_sqrt))
+#Anderson Darling
+library(nortest)
+ad.test(model_sqrt$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model_sqrt)
+# 4. Multicollinearity
+library(car)
+vif(model_sqrt)
+
+# 5. Independence of errors
+durbinWatsonTest(model_sqrt)
+
+###Checking Specification
+reset_result <- resettest(model_sqrt, power = 2:3, type = "fitted")
+print(reset_result)
+
+
+#Fitting Model with log log price
+model_log_log <- lm(log(log_price) ~ city * room_type, data = df)
+print(summary(model_log_log))
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model_log_log$fitted.values, model_log_log$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model_log_log$residuals)
+qqline(model_log_log$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model_log_log))
+#Anderson Darling
+library(nortest)
+ad.test(model_log_log$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model_log_log)
+
+# 4. Multicollinearity
+library(car)
+vif(model_log_log)
+
+# 5. Independence of errors
+durbinWatsonTest(model_log_log)
+
+###Checking Specification
+reset_result <- resettest(model_log_log, power = 2:3, type = "fitted")
+print(reset_result)
+
+
+#Fitting model of 1/log price
+model_1_over_log<- lm(I(1/log_price) ~ city * room_type, data = df)
+print(summary(model_1_over_log))
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model_1_over_log$fitted.values, model_1_over_log$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model_1_over_log$residuals)
+qqline(model_1_over_log$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model_1_over_log))
+#Anderson Darling
+library(nortest)
+ad.test(model_1_over_log$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model_1_over_log)
+
+# 4. Multicollinearity
+library(car)
+vif(model_1_over_log)
+
+# 5. Independence of errors
+durbinWatsonTest(model_1_over_log)
+
+###Checking Specification
+reset_result <- resettest(model_1_over_log, power = 2:3, type = "fitted")
+print(reset_result)
+
+#fitting 1/sqrt price
+model_inv_sqrt <- lm(I(1 / sqrt(price)) ~ city*room_type,data = df)
+
+summary(model_inv_sqrt)
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model_inv_sqrt$fitted.values, model_inv_sqrt$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model_inv_sqrt$residuals)
+qqline(model_inv_sqrt$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model_inv_sqrt))
+#Anderson Darling
+library(nortest)
+ad.test(model_inv_sqrt$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model_inv_sqrt)
+
+# 4. Multicollinearity
+library(car)
+vif(model_inv_sqrt)
+
+# 5. Independence of errors
+durbinWatsonTest(model_inv_sqrt)
+
+###Checking Specification
+reset_result <- resettest(model_inv_sqrt, power = 2:3, type = "fitted")
+print(reset_result)
+
+#USing log price and fixing the hetro
+#####Fixing Hetro
+library(sandwich)
+library(lmtest)
+coeftest(model, vcov = vcovHC(model, type = "HC3"))
+
+
+#Doing F-Test for with and without interaction to see if interaction is imp
+model_without<-lm(log_price~ city+room_type, data=df)
+summary(model_without)
+anova(model,model_without)
+#Model Without Interaction
+bptest(model_without)
+
+
+#Which explain more the room type or city non nested f test
+#(discrimination approach)
+
+model_city<-lm(log_price~ city, data=df)
+summary(model_city)
+AIC(model_city)
+BIC(model_city)
+model_room<-lm(log_price~room_type, data=df)
+summary(model_room)
+AIC(model_room)
+BIC(model_room)
