@@ -1,0 +1,117 @@
+Question 3
+
+# ============================================================
+# Does the price of weekend differ between amsterdam and lisbon
+# Diagnostics: DW, VIF, Shapiro, Anderson-Darling,
+#              QQ plot, Residuals vs Fitted,
+#              Breusch-Pagan, RESET test
+# ============================================================
+
+# ----- 0. Install & load packages ---------------------------
+packages <- c("readxl", "lmtest", "car", "nortest", "ggplot2", "patchwork")
+new_pkgs  <- packages[!packages %in% installed.packages()[, "Package"]]
+if (length(new_pkgs)) install.packages(new_pkgs, dependencies = TRUE)
+
+library(readxl)   # read Excel
+library(lmtest)   # dwtest, bptest, resettest
+library(car)      # vif
+library(nortest)  # ad.test (Anderson-Darling)
+library(ggplot2)  # plots
+library(patchwork)# combine ggplots
+
+# ----- 1. Load data -----------------------------------------
+# Update the path below if your file is stored elsewhere
+
+df <- read_excel("C:/Users/doaah/Downloads/eco/airbnb_with_guest_satisfaction.xlsx")
+
+
+# ----- 2. Prepare variables ---------------------------------
+# Ensure correct type
+df$weekend          <- as.integer(df$weekend)
+df$room_private     <- as.integer(df$room_private)
+df$host_is_superhost<- as.integer(df$host_is_superhost)
+df$city             <- as.factor(df$city)      # Amsterdam = ref
+df$room_type        <- as.factor(df$room_type) # Entire home/apt = ref
+# ----- 3. Fit model -----------------------------------------
+#Fit Model without log
+model_without <- lm(
+  price ~weekend*city,
+  data = df
+)
+
+print(summary(model_without))
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model_without$fitted.values, model_without$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model_without$residuals)
+qqline(model_without$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model_without))
+#Anderson Darling
+library(nortest)
+ad.test(model_without$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model_without)
+
+# 4. Multicollinearity
+library(car)
+vif(model_without)
+
+# 5. Independence of errors
+durbinWatsonTest(model_without)
+
+###Checking Specification
+reset_result <- resettest(model_without, power = 2:3, type = "fitted")
+print(reset_result)
+
+#Fitting Model taking Log for price
+model3 <- lm(
+  log_price ~weekend*city,
+  data = df
+)
+
+print(summary(model3))
+# -----------------------------
+# CHECK ASSUMPTIONS
+# -----------------------------
+
+# 1. Linearity + Homoscedasticity
+plot(model3$fitted.values, model3$residuals,
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+# 2. Normality of residuals
+qqnorm(model3$residuals)
+qqline(model3$residuals, col = "red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model3))
+#Anderson Darling
+library(nortest)
+ad.test(model3$residuals)
+# 3. Homoscedasticity
+library(lmtest)
+bptest(model3)
+#####Fixing Hetro
+library(sandwich)
+library(lmtest)
+coeftest(model3, vcov = vcovHC(model3, type = "HC3"))
+# 4. Multicollinearity
+library(car)
+vif(model3)
+
+# 5. Independence of errors
+durbinWatsonTest(model3)
+
+###Checking Specification
+reset_result <- resettest(model3, power = 2:3, type = "fitted")
+print(reset_result)
